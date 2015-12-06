@@ -43,9 +43,21 @@ class Router {
 				$obj = new $controller();
 				$this->routeToController=$controller;
 				call_user_func_array(array($obj, $method),$this->_setVariableValues($url,$route));
-				require_once(dirname(dirname(dirname(__FILE__))).'/app/views/'.strtolower($route['controller']).'/'.$route['method'].'.php');
+				$viewFile=dirname(dirname(dirname(__FILE__))).'/app/views/'.strtolower($route['controller']).'/'.$route['method'].'.php';
+				if (file_exists($viewFile)){
+					require_once( dirname(dirname(dirname(__FILE__))).'/app/views/layouts/default_header.php');
+					require_once($viewFile);
+					require_once( dirname(dirname(dirname(__FILE__))).'/app/views/layouts/default_footer.php');
+					return TRUE;
+				}else{
+					header("HTTP/1.0 404 Not Found");
+					require_once(dirname(dirname(dirname(__FILE__))).'/lib/views/error_404.php');
+				}
+				break;
 			}
 		}
+		header("HTTP/1.0 404 Not Found");
+		require_once(dirname(dirname(dirname(__FILE__))).'/lib/views/error_404.php');
 	}
 	private function _removeVariableValues($url,$routePath){
 		$routeFolders=explode('/',$routePath);
@@ -64,6 +76,7 @@ class Router {
 		$urlFolders=explode('/',$url);
 		$folderNum=0;
 		$variableNum=0;
+		$variables=array();
 		foreach($routeFolders as $folder){
 			if (substr($routeFolders[$folderNum],0,1)==':'){
 				$variables[$route['variables'][$variableNum]]=$urlFolders[$folderNum];

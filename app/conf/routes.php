@@ -1,7 +1,7 @@
 <?php
 
 $Router->addRoute('/hello/:pagenum/:pagelimit/','home','test');
-$Router->addRoute('path1','controller','method');
+$Router->addRoute('/','home','homepage');
 $Router->addRoute('path2','controller','method');
 $Router->addRoute('path3','controller','method');
 $Router->addRoute('path4','controller','method');
