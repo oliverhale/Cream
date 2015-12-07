@@ -45,9 +45,9 @@ class Router {
 				call_user_func_array(array($obj, $method),$this->_setVariableValues($url,$route));
 				$viewFile=dirname(dirname(dirname(__FILE__))).'/app/views/'.strtolower($route['controller']).'/'.$route['method'].'.php';
 				if (file_exists($viewFile)){
-					require_once( dirname(dirname(dirname(__FILE__))).'/app/views/layouts/default_header.php');
-					require_once($viewFile);
-					require_once( dirname(dirname(dirname(__FILE__))).'/app/views/layouts/default_footer.php');
+					$obj->loadLayout('default_header');
+					$obj->loadView($route['controller'],$route['method']);
+					$obj->loadLayout('default_footer');
 					return TRUE;
 				}else{
 					header("HTTP/1.0 404 Not Found");
