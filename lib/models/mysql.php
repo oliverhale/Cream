@@ -20,5 +20,16 @@ class MysqlConnection  {
         $data = $res->fetch_assoc();
         return $data;
     }
+    public function Save($data=null){
+        if (!$data){
+            return false;
+        }
+        $sql="REPLACE INTO ".$this->name." SET ";
+        foreach($data AS $key=>$value){
+            $sql.="`".$key."`='".$value."',";
+        }
+        $sql=substr($sql, 0,strlen($sql)-1);
+        $this->Query($sql);
+    }
     
 } 

@@ -7,9 +7,11 @@ class App extends Router {
     function __construct(){ 
       require(dirname(dirname(dirname(__FILE__))).'/lib/models/mysql.php');
       $this->db = new MysqlConnection();
+      $this->html = new stdClass();
     }
-    public function loadModule(){  	
-    	$this->_openFile( dirname(dirname(dirname(__FILE__))).'/app/models/'.strtolower($model).'.php');
+    public function loadModel($model){  	
+    	require( dirname(dirname(dirname(__FILE__))).'/app/models/'.strtolower($model).'.php');
+        $this->$model= new $model();
     }
     public function loadView($controller,$method){
     	$this->_openFile( dirname(dirname(dirname(__FILE__))).'/app/views/'.strtolower($controller).'/'.$method .'.php');
