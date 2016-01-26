@@ -1,6 +1,6 @@
 <?php
 
-$Router->addRoute('/hello/:pagenum/:pagelimit/','home','test');
+$Router->addRoute('/hello/:pagenum/:pagelimit/','home','homepage');
 $Router->addRoute('/','home','homepage');
 $Router->addRoute('path2','controller','method');
 $Router->addRoute('path3','controller','method');

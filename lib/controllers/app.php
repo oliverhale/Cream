@@ -3,11 +3,13 @@ class App extends Router {
 	var $name ='App';
 	var $varCount=0;
 	var $varPool=array();
+    var $db;
     function __construct(){ 
-      echo 'running construct';
+      require(dirname(dirname(dirname(__FILE__))).'/lib/models/mysql.php');
+      $this->db = new MysqlConnection();
     }
-    public function loadModule(){
-    	echo 'yo yo yo';
+    public function loadModule(){  	
+    	$this->_openFile( dirname(dirname(dirname(__FILE__))).'/app/models/'.strtolower($model).'.php');
     }
     public function loadView($controller,$method){
     	$this->_openFile( dirname(dirname(dirname(__FILE__))).'/app/views/'.strtolower($controller).'/'.$method .'.php');
@@ -28,5 +30,30 @@ class App extends Router {
     }
     public function assign($arr){
     	$this->varPool[$this->varCount]=$arr;
+    }
+     public function link($controller,$method,$parameters=null){
+        var_dump($this->routes);
+        foreach($this->routes AS $route){
+            echo '['.$route['controller'].'=='.$controller.' && '.$route['method'].'=='.$method.' && '.count($route['variables']).'=='.count($parameters).']';
+            if($route['controller']==$controller && $route['method']==$method && count($route['variables'])==count($parameters) ){
+                $routeFound=$route;
+                break;
+            }
+        }
+        if(!isset($routeFound)){
+            return null;
+        }else{
+            $i=0; $x=0;
+            $folders=explode('/',$routeFound['path']);
+            foreach($folders as $folder){
+                if (substr_count($folder, ':')>1){
+                    $folders[$i]=$routeFound['variables'][$x];
+                    $x++;
+                }
+                $i++;
+            }
+            $path=implode('/',$folders);
+            return $path;
+        }
     }
 } 

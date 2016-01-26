@@ -93,6 +93,7 @@ class Router {
 			return $str;
 		}
 	}
+
 	function __destruct() {
 	/*
 		if ($this->routeToController){
@@ -100,6 +101,7 @@ class Router {
 		}
       */ 
    }
+
 } 
 
 $Router = new Router();

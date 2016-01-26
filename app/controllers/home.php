@@ -9,10 +9,10 @@ class Home extends App {
 
     }
     function homepage(){
-    		echo 'hi';
+    //		echo 'hi';
     		$t='mr T';
     		$testVar='Another';
-    	$this->assign(compact("t", "testVar"));
-    	//$this->loadmodule();
+       $this->db->Query("SELECT * FROM `page` "); 
+    	 $this->assign(compact("t", "testVar"));
     }
 }
