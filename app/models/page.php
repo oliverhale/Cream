@@ -1,6 +1,7 @@
 <?php class Page extends MysqlConnection {
-	var $name='Page';
-	function __construct(){ 
-     
+	var $name='page';
+	var $mysqli;
+	function __construct($connection){
+		$this->mysqli=$connection;
     }
 }

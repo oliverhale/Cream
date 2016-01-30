@@ -4,14 +4,23 @@ class App extends Router {
 	var $varCount=0;
 	var $varPool=array();
     var $db;
+    var $data;
+    var $html;
     function __construct(){ 
       require(dirname(dirname(dirname(__FILE__))).'/lib/models/mysql.php');
       $this->db = new MysqlConnection();
       $this->html = new stdClass();
+      if (isset($_POST)){
+        $this->data= new stdClass();
+        foreach($_POST as $key=>$val){
+           if (!empty($key) && !empty($val)){ $this->data->$key=$val; }
+        }
+      }
+      require_once( dirname(dirname(dirname(__FILE__))).'/lib/helpers/string.php');
     }
     public function loadModel($model){  	
     	require( dirname(dirname(dirname(__FILE__))).'/app/models/'.strtolower($model).'.php');
-        $this->$model= new $model();
+        $this->$model= new $model($this->db);
     }
     public function loadView($controller,$method){
     	$this->_openFile( dirname(dirname(dirname(__FILE__))).'/app/views/'.strtolower($controller).'/'.$method .'.php');
@@ -34,7 +43,7 @@ class App extends Router {
     	$this->varPool[$this->varCount]=$arr;
     }
      public function link($controller,$method,$parameters=null){
-        var_dump($this->routes);
+        //var_dump($this->routes);
         foreach($this->routes AS $route){
             echo '['.$route['controller'].'=='.$controller.' && '.$route['method'].'=='.$method.' && '.count($route['variables']).'=='.count($parameters).']';
             if($route['controller']==$controller && $route['method']==$method && count($route['variables'])==count($parameters) ){

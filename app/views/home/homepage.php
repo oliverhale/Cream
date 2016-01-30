@@ -11,7 +11,7 @@
 	      			<p>To begin Register Or Login.</p>
 					<hr>
 					<h2 id="visual-style">Login</h2>
-					<form>
+					<form method="post">
 						<label>Email</label>
 						<input type="text" name="email" id="email">
 						<label>password</label>
