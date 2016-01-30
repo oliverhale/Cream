@@ -6,6 +6,8 @@ define("MYSQL_PORT",    "3306");
 define("MYSQL_USER",    "cream");
 define("MYSQL_PASSWORD",    "jason642");
 
+define('DEBUG',TRUE);
+
 
 
 

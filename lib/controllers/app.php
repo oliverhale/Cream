@@ -7,8 +7,13 @@ class App extends Router {
     var $data;
     var $html;
     function __construct(){ 
+      //require_once( dirname(dirname(dirname(__FILE__))).'/lib/helpers/debug.php'); 
+      require_once( dirname(dirname(dirname(__FILE__))).'/lib/helpers/string.php');
+      require_once( dirname(dirname(dirname(__FILE__))).'/lib/helpers/math.php');
       require(dirname(dirname(dirname(__FILE__))).'/lib/models/mysql.php');
+      startEvent('Create Mysql Connection');
       $this->db = new MysqlConnection();
+      endEvent('Create Mysql Connection');
       $this->html = new stdClass();
       if (isset($_POST)){
         $this->data= new stdClass();
@@ -16,7 +21,7 @@ class App extends Router {
            if (!empty($key) && !empty($val)){ $this->data->$key=$val; }
         }
       }
-      require_once( dirname(dirname(dirname(__FILE__))).'/lib/helpers/string.php');
+      
     }
     public function loadModel($model){  	
     	require( dirname(dirname(dirname(__FILE__))).'/app/models/'.strtolower($model).'.php');
