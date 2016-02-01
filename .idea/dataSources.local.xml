@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="dataSourceStorageLocal">
+    <data-source name="MySQL - cream_php@localhost" uuid="c99ab182-bbbc-4995-a749-e362d7db25a0">
+      <secret-storage>master_key</secret-storage>
+      <user-name>cream</user-name>
+      <schema-pattern>cream_php.*</schema-pattern>
+      <default-schemas>cream_php.*</default-schemas>
+    </data-source>
+  </component>
+</project>

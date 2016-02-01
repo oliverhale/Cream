@@ -3,7 +3,7 @@
 		<article role="article" class="group">
 	  		<header class="page-header group">
 	    		<div class="hgroup">
-	      			<h1>Welcome to CreamPHP</h1>
+	      			<h1>Login to CreamPHP</h1>
 	     		</div>
 	  		</header>
 	  		<div class="article-container group">

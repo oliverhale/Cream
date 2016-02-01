@@ -35,16 +35,34 @@ class Router {
 	}
 	public function calculateRoute(){
 		$url=$this->_removeEndingSlash($_SERVER['REQUEST_URI']);		
+		//var_dump($this->routes);
 		foreach($this->routes as $route){
 			if ($route['path']==$this->_removeVariableValues($url,$route['path']) )  {
 				require_once(dirname(dirname(dirname(__FILE__))).'/app/controllers/'.strtolower($route['controller']).'.php');
 				$method=$route['method'];
 				$controller=$route['controller'];
 				$obj = new $controller();
+				if (property_exists($controller, 'components')){
+					foreach($obj->components as $component){
+						$obj->loadComponent($component);
+					} 
+				}
+				if (property_exists($controller, 'models')){
+					foreach($obj->models as $model){
+						$obj->loadModel($model);
+					} 
+				}
 				$this->routeToController=$controller;
+				call_user_func_array(array($obj, 'passRoutes'),array($this->routes));
 				call_user_func_array(array($obj, $method),$this->_setVariableValues($url,$route));
 				$viewFile=dirname(dirname(dirname(__FILE__))).'/app/views/'.strtolower($route['controller']).'/'.$route['method'].'.php';
 				if (file_exists($viewFile)){
+					// If no headers are sent, send default one
+					if (!headers_sent()) {
+						header('Content-type: text/html');
+						header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
+						header("Expires: Sat, 26 Jul 1997 05:00:00 GMT"); // Date in the past
+					}
 					$obj->loadLayout('default_header');
 					$obj->loadView($route['controller'],$route['method']);
 					$obj->loadLayout('default_footer');

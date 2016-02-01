@@ -16,7 +16,7 @@ class MysqlConnection  {
     }
     public function Query($sql){  	
     	$res = $this->mysqli->query($sql);
-        if($res){
+        if(is_object($res)){
             return  $res->fetch_assoc();
         }
         return null;
@@ -26,13 +26,17 @@ class MysqlConnection  {
             return false;
         }
         $sql="REPLACE INTO ".$this->name." SET ";
+        $set_sql=array();
         foreach($data AS $key=>$value){
-            $sql.="`".$key."`='".$value."',";
+            $set_sql[]="`".$key."`='".$value."'";
         }
-        $sql=substr($sql, 0,strlen($sql)-1);
+        if(!isset($data['id'])){
+           $set_sql[]="`id`='".createGUID()."'";
+        }
+        $sql.=implode(",",$set_sql);
         $this->Query($sql);
     }
-    public function Find($returnType,$settings){
+    public function Find($returnType=null,$settings=null){
         $sql='SELECT ';
         $fields=array();
         if(isset($settings['fields'])){
@@ -76,6 +80,7 @@ class MysqlConnection  {
             }
             $sql.=implode(',',$group);
         }
+        echo '['.$sql.']';
         return $this->Query($sql);
     }
     public function __call($name,$arguements)

@@ -2,6 +2,8 @@
 class Home extends App {
   	var $name ='Home';
     var $html;
+    var $components=array('email');
+    var $models=array('website','page');
     function __construct() {
        parent::__construct();
 
@@ -17,11 +19,19 @@ class Home extends App {
       }
       $t='mr T';
     	$testVar='Another';
+      //__('test');
       //$this->db->Query("SELECT * FROM `page` ");
-      $this->loadModel('page');
-      $this->loadModel('website');
-      //$this->page->Save();
-      $this->page->FindById(1);
+     // $this->loadModel('page');
+      //$this->loadModel('website');
+      $data['path']='/test/';
+      $data['browser_title']='/test/';
+      $data['meta_description']='/test/';
+      $data['meta_keywords']='/test/';
+      $data['content']='/test/';
+      $data['website_id']='/test/';
+
+      $this->page->Save($data);
+      var_dump($this->page->Find());
       $this->page->FindById(2);
       $this->website->FindById(2);
       $this->html->title='Welcome to CreamPHP';
