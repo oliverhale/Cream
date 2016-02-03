@@ -2,7 +2,7 @@
 class MysqlConnection  {
 	
 	var $mysqli;
-
+    var $contain;
     function __construct(){
         return $this->Connection();
     }
@@ -37,6 +37,7 @@ class MysqlConnection  {
         $this->Query($sql);
     }
     public function Find($returnType=null,$settings=null){
+        $currentModel=get_class($this);
         $sql='SELECT ';
         $fields=array();
         if(isset($settings['fields'])){
@@ -47,17 +48,28 @@ class MysqlConnection  {
         }else{
             $sql.=' * ';
         }
-        $sql.=' FROM '.$this->name.' WHERE ';
+        $sql.=' FROM '.$this->name.' AS '.$currentModel; 
+        if (count($this->contain)>0){
+            foreach($this->contain  as $foreignModel){
+                if (in_array($foreignModel , $this->hasOne)){
+                    $this->$foreignModel= new $foreignModel($this->mysqli);
+                    $sql.=' LEFT JOIN '.$this->$foreignModel->name.' AS '.$foreignModel.' ON ('.$currentModel.'.id='.$foreignModel.'.'.$this->$foreignModel->foreignKeyName.')'; 
+                }
+            }
+        }
+        $sql.=' WHERE ';
         if (isset($settings['conditions'])){
             foreach($settings['conditions'] as $key=>$val){
                 if($key!='OR'){
+                    if(substr_count($key,'.')<1){ $key=$currentModel.'.'.$key; }
                     $conditions[]=$key."='".$val."'";
                 }
             }
             $sql.=" ".implode(' AND ',$conditions)." ";
             if(isset($settings['conditions']['OR'])) {
                 foreach($settings['conditions']['OR'] as $key=>$val){
-                $or_conditions[]=$key."='".$val."'";
+                    if(substr_count($key,'.')<1){ $key=$currentModel.'.'.$key; }
+                    $or_conditions[]=$key."='".$val."'";
                 }
             $sql.=" (".implode(' OR ',$or_conditions).") ";
             }
@@ -81,7 +93,25 @@ class MysqlConnection  {
             $sql.=implode(',',$group);
         }
         echo '['.$sql.']';
-        return $this->Query($sql);
+        $initial_data=$this->Query($sql);
+        if (count($this->contain)>0 && count($initial_data)>0){
+            foreach($initial_data as $row){
+                $primaryKeyIds[]=$initial_data[$currentModel]['id'];
+            }
+            foreach($this->contain  as $foreignModel){
+                if (in_array($foreignModel , $this->hasOne)){
+                    $this->$foreignModel= new $foreignModel($this->mysqli);
+                    $foreign_data=$this->$foreignModel->Find('',array('conditions'=>array($foreignModel.'.'.$this->foreignKeyName =>$primaryKeyIds)));
+                }
+            }    
+        }
+    }
+    public function contain($contain){
+        if(is_string($contain)){
+            $this->contain=array($contain);
+        }else{
+            $this->contain=$contain;
+        }
     }
     public function __call($name,$arguements)
     {

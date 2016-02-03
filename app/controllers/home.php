@@ -32,6 +32,7 @@ class Home extends App {
 
       $this->page->Save($data);
       var_dump($this->page->Find());
+      $this->page->contain('Website','Comment');
       $this->page->FindById(2);
       $this->website->FindById(2);
       $this->html->title='Welcome to CreamPHP';
