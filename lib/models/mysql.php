@@ -1,25 +1,46 @@
 <?php 
 class MysqlConnection  {
-	
-	var $mysqli;
+	//var $mysqli;
     var $contain;
+    var $tableStructure;
+    var $currentModel;
+    var $Link;
+    var $stat;
     function __construct(){
-        return $this->Connection();
+       $this->Connection();
     }
 
-    public function Connection(){    
-        $this->mysqli = new mysqli(MYSQL_HOST, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB, MYSQL_PORT);
-		if ($this->mysqli->connect_errno) {
-            echo "Failed to connect to MySQL: (" . $this->mysqli->connect_errno . ") " . $this->mysqli->connect_error;
-		}
-        $this->mysqli->set_charset('utf8');
-    }
-    public function Query($sql){  	
-    	$res = $this->mysqli->query($sql);
-        if(is_object($res)){
-            return  $res->fetch_assoc();
+    public function Connection(){
+        if(!isset($GLOBALS['connection'])){
+        $GLOBALS['connection']=mysqli_connect(MYSQL_HOST, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB, MYSQL_PORT);
+		if (!$GLOBALS['connection']) {
+            echo "Error: Unable to connect to MySQL." . PHP_EOL;
+            echo "Debugging errno: " . mysqli_connect_errno() . PHP_EOL;
+            echo "Debugging error: " . mysqli_connect_error() . PHP_EOL;
+            exit;
         }
-        return null;
+        $this->ConnnectionStat();
+        mysqli_set_charset( $GLOBALS['connection'],  MYSQL_CHAR_SET );
+        }        
+    }
+    public function ConnnectionStat(){
+        $this->stat=mysqli_get_connection_stats($GLOBALS['connection']);
+    }
+    
+    public function q($sql){
+    	$res=mysqli_query($GLOBALS['connection'],$sql);
+        if(is_object($res)){
+            $data= $this->fetch($res);    
+            mysqli_free_result($res);
+        return $data;
+        }    
+    }
+    public function fetch($res){
+        $rows=array();
+        while($data= mysqli_fetch_assoc($res)){
+            $rows[]=$data;
+        }
+        return $rows;
     }
     public function Save($data=null){
         if (!$data){
@@ -37,23 +58,42 @@ class MysqlConnection  {
         $this->Query($sql);
     }
     public function Find($returnType=null,$settings=null){
-        $currentModel=get_class($this);
+        $this->currentModel=get_class($this);
         $sql='SELECT ';
         $fields=array();
         if(isset($settings['fields'])){
             foreach($settings['fields'] as $key=>$val){
-                if (is_int($key)) { $fields[]=$val.','; }else{ $fields[]=$val.'AS '.$val; }
+                if (is_int($key)) { $fields[]=$val.','; }else{ $fields[]=$val.' AS '.$val; }
             }
             $sql.=implode(', ',$fields);
         }else{
-            $sql.=' * ';
+            if (empty($this->tableStructure)){
+                $this->tableStructure=$this->getTableStructure(); 
+            }
+            if (is_array($this->tableStructure)){
+                foreach($this->tableStructure as $column){
+                    $columns[]=$this->currentModel.'.'.$column['Field'].' AS '.$this->currentModel.'_'.$column['Field'];
+                }
+            }
+            if (count($this->contain)>0){
+                foreach($this->contain  as $foreignModel){
+                    if (in_array($foreignModel , $this->hasOne)){
+                        $this->$foreignModel= new $foreignModel();
+                        $allColumns=$this->getTableStructure($this->$foreignModel->name);
+                        foreach($allColumns as $column){
+                            $columns[]=$foreignModel.'.'.$column['Field'].' AS '.$foreignModel.'_'.$column['Field'];
+                        }
+                    }
+                }
+            }    
         }
-        $sql.=' FROM '.$this->name.' AS '.$currentModel; 
+        $sql.=implode(',',$columns);
+        $sql.=' FROM '.$this->name.' AS '.$this->currentModel; 
         if (count($this->contain)>0){
             foreach($this->contain  as $foreignModel){
                 if (in_array($foreignModel , $this->hasOne)){
-                    $this->$foreignModel= new $foreignModel($this->mysqli);
-                    $sql.=' LEFT JOIN '.$this->$foreignModel->name.' AS '.$foreignModel.' ON ('.$currentModel.'.id='.$foreignModel.'.'.$this->$foreignModel->foreignKeyName.')'; 
+                    $this->$foreignModel= new $foreignModel();
+                    $sql.=' LEFT JOIN '.$this->$foreignModel->name.' AS '.$foreignModel.' ON ('.$this->currentModel.'.'.$this->$foreignModel->foreignKeyName.'='.$foreignModel.'.id)'; 
                 }
             }
         }
@@ -61,14 +101,22 @@ class MysqlConnection  {
         if (isset($settings['conditions'])){
             foreach($settings['conditions'] as $key=>$val){
                 if($key!='OR'){
-                    if(substr_count($key,'.')<1){ $key=$currentModel.'.'.$key; }
-                    $conditions[]=$key."='".$val."'";
+                    if(substr_count($key,'.')<1){ $key=$this->currentModel.'.'.$key; }
+                    if (is_string($val)){
+                        $conditions[]=$key."='".$val."'";
+                    }else{
+                        if (count($val)>1){
+                            $conditions[]=$key." IN ('".implode("','",$val)."')";
+                        }else{
+                          $conditions[]=$key."='".$val[0]."'";  
+                        }
+                    }
                 }
             }
             $sql.=" ".implode(' AND ',$conditions)." ";
             if(isset($settings['conditions']['OR'])) {
                 foreach($settings['conditions']['OR'] as $key=>$val){
-                    if(substr_count($key,'.')<1){ $key=$currentModel.'.'.$key; }
+                    if(substr_count($key,'.')<1){ $key=$this->currentModel.'.'.$key; }
                     $or_conditions[]=$key."='".$val."'";
                 }
             $sql.=" (".implode(' OR ',$or_conditions).") ";
@@ -92,19 +140,53 @@ class MysqlConnection  {
             }
             $sql.=implode(',',$group);
         }
-        echo '['.$sql.']';
-        $initial_data=$this->Query($sql);
-        if (count($this->contain)>0 && count($initial_data)>0){
+        $initial_data=$this->q($sql);
+        $initial_data=$this->convertColumns($initial_data);
+        if (count($this->contain)>0 && !empty($initial_data) && property_exists($this->currentModel,'hasMany')){
+            $i=0;
             foreach($initial_data as $row){
-                $primaryKeyIds[]=$initial_data[$currentModel]['id'];
+                $primaryKeyIds[]=$row[$this->currentModel]['id'];
+                $rowPos[$row[$this->currentModel]['id']]=$i;
+                $i++;
             }
             foreach($this->contain  as $foreignModel){
-                if (in_array($foreignModel , $this->hasOne)){
-                    $this->$foreignModel= new $foreignModel($this->mysqli);
+                if (in_array($foreignModel , $this->hasMany)){
+                    require_once( dirname(dirname(dirname(__FILE__))).'/app/models/'.strtolower($foreignModel).'.php');
+                    $this->$foreignModel= new $foreignModel();
                     $foreign_data=$this->$foreignModel->Find('',array('conditions'=>array($foreignModel.'.'.$this->foreignKeyName =>$primaryKeyIds)));
+                    foreach($foreign_data as $row){
+                        $rowPosition=$rowPos[$row[$foreignModel][$this->foreignKeyName]];
+                        if (!isset($initial_data[$rowPosition][$foreignModel])){
+                            $total=0;
+                        }else{ 
+                            $total=count($initial_data[$rowPosition][$foreignModel]);
+                        }
+                        $initial_data[$rowPosition][$foreignModel][$total]=$row[$foreignModel];
+                    }
                 }
             }    
         }
+        $data=$initial_data;
+        return $data; 
+    }
+    public function convertColumns($convertColumns){
+        if (empty($convertColumns)){ return null; }
+        foreach($convertColumns as $rowNum=>$val){
+            foreach($convertColumns[$rowNum]  as $column=>$value){
+                $model=substr($column,0,strpos($column,"_"));
+                $actualColumn=substr($column,strpos($column,"_")+1);
+                $newArray[$rowNum][$model][$actualColumn]=$value;
+                unset($convertColumns[$rowNum][$column]);
+            }
+        }
+        return $newArray;
+    }
+    public function getTableStructure($table=null){
+        if (is_null($table)){
+         $table=$this->name;   
+        }
+        $sql='SHOW COLUMNS FROM '.$table;
+        return $this->q($sql);
     }
     public function contain($contain){
         if(is_string($contain)){
@@ -115,10 +197,9 @@ class MysqlConnection  {
     }
     public function __call($name,$arguements)
     {
-       if(substr_count($name, 'FindBy')<1){
-         return false;
-       }
-       $column=str_replace('FindBy', '', $name);
-       $this->Find('list',array('conditions'=>array(strtolower($column)=>column_string_convert($arguements[0]))));
+        if(substr_count($name, 'FindBy')>0){
+        $column=str_replace('FindBy', '', $name);
+        return $this->Find('list',array('conditions'=>array(strtolower($column)=>column_string_convert($arguements[0]))));
+        }
     }
 } 
