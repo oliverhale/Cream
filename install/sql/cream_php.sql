@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: 127.0.0.1
--- Generation Time: Feb 01, 2016 at 11:27 PM
+-- Generation Time: Feb 06, 2016 at 07:01 PM
 -- Server version: 5.7.9
 -- PHP Version: 7.0.0
 
@@ -33,7 +33,8 @@ CREATE TABLE IF NOT EXISTS `access_areas` (
   `method` char(32) NOT NULL,
   `created` datetime NOT NULL,
   `active` tinyint(1) NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `controller` (`controller`,`method`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -50,7 +51,9 @@ CREATE TABLE IF NOT EXISTS `access_templates` (
   `prim_key` char(36) NOT NULL,
   `created` datetime NOT NULL,
   `active` tinyint(1) NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `access_area_id` (`access_area_id`),
+  KEY `prim_key` (`prim_key`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -74,7 +77,13 @@ CREATE TABLE IF NOT EXISTS `addresses` (
   `created` datetime NOT NULL,
   `modified` datetime NOT NULL,
   `active` tinyint(4) NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  KEY `sub_region_id` (`sub_region_id`),
+  KEY `sub_region_id_2` (`sub_region_id`),
+  KEY `region_id` (`region_id`),
+  KEY `region_id_2` (`region_id`),
+  KEY `country_id` (`country_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -88,8 +97,38 @@ CREATE TABLE IF NOT EXISTS `assoc_logs` (
   `id` char(36) NOT NULL,
   `entity_table` char(30) NOT NULL,
   `prim_key` char(36) NOT NULL,
-  `log_id` char(36) NOT NULL
+  `log_id` char(36) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `log_id` (`log_id`),
+  KEY `prim_key` (`prim_key`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `comments`
+--
+
+DROP TABLE IF EXISTS `comments`;
+CREATE TABLE IF NOT EXISTS `comments` (
+  `id` char(36) NOT NULL,
+  `page_id` char(36) NOT NULL,
+  `user_id` char(36) NOT NULL,
+  `message` text NOT NULL,
+  `created` datetime NOT NULL,
+  `modified` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `page_id` (`page_id`),
+  KEY `user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `comments`
+--
+
+INSERT INTO `comments` (`id`, `page_id`, `user_id`, `message`, `created`, `modified`) VALUES
+('e249f198-cabf-11e5-8159-14feb5bdf6bd', '2', '', 'hello world', '0000-00-00 00:00:00', '0000-00-00 00:00:00'),
+('e24bc244-cabf-11e5-8159-14feb5bdf6bd', '2', '', 'hello world', '0000-00-00 00:00:00', '0000-00-00 00:00:00');
 
 -- --------------------------------------------------------
 
@@ -111,6 +150,45 @@ CREATE TABLE IF NOT EXISTS `countries` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `devices`
+--
+
+DROP TABLE IF EXISTS `devices`;
+CREATE TABLE IF NOT EXISTS `devices` (
+  `id` char(36) NOT NULL,
+  `ip_address_id` char(36) DEFAULT NULL,
+  `device_type` varchar(15) DEFAULT NULL,
+  `user_agent` varchar(45) DEFAULT NULL,
+  `created` datetime DEFAULT NULL,
+  `modified` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `ip_address_id` (`ip_address_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `email_contents`
+--
+
+DROP TABLE IF EXISTS `email_contents`;
+CREATE TABLE IF NOT EXISTS `email_contents` (
+  `id` char(36) NOT NULL,
+  `name` varchar(45) DEFAULT NULL,
+  `description` text,
+  `subject` text,
+  `message` text,
+  `to` text,
+  `cc` text,
+  `bcc` text,
+  `from` text,
+  `important` tinyint(1) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `events`
 --
 
@@ -124,6 +202,46 @@ CREATE TABLE IF NOT EXISTS `events` (
   `created` datetime NOT NULL,
   `modified` datetime NOT NULL,
   KEY `id` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `ip_addresses`
+--
+
+DROP TABLE IF EXISTS `ip_addresses`;
+CREATE TABLE IF NOT EXISTS `ip_addresses` (
+  `id` char(36) NOT NULL,
+  `ip4v` char(15) NOT NULL,
+  `ip6v` char(45) NOT NULL,
+  `country_id` char(36) NOT NULL,
+  `created` datetime NOT NULL,
+  `modified` datetime NOT NULL,
+  `hostname` char(200) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `country_id` (`country_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `ip_rules`
+--
+
+DROP TABLE IF EXISTS `ip_rules`;
+CREATE TABLE IF NOT EXISTS `ip_rules` (
+  `id` char(36) NOT NULL,
+  `ip_address_id` char(36) NOT NULL,
+  `type` char(10) NOT NULL,
+  `user_id` char(36) NOT NULL,
+  `valid_start` datetime NOT NULL,
+  `valid_end` datetime NOT NULL,
+  `created` datetime NOT NULL,
+  `modified` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  KEY `ip_address_id` (`ip_address_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -160,7 +278,9 @@ CREATE TABLE IF NOT EXISTS `pages` (
   `website_id` char(32) NOT NULL,
   `header` char(32) NOT NULL,
   `footer` char(32) NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `path` (`path`),
+  KEY `website_id` (`website_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
@@ -168,20 +288,24 @@ CREATE TABLE IF NOT EXISTS `pages` (
 --
 
 INSERT INTO `pages` (`id`, `path`, `browser_title`, `meta_description`, `meta_keywords`, `content`, `website_id`, `header`, `footer`) VALUES
-('', '/hello/world', 'test test ', 'meta description', 'meta keywords', 'content', 'website id', 'header', 'footer'),
 ('0107BD3C-8C6C-E0F9-A229-97B0773C4891', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
+('063AC904-4E8C-BA9C-0089-6BC459B8E040', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('068C3D47-AE8D-1B18-09FD-2085DB546BE7', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('0BBE5C1D-082D-ABBF-8029-24F468C79394', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('0D15D490-608F-B0C8-FCEB-41F42834CF49', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('10669B92-EA35-F671-D45E-281F3DDC52F4', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('170514A2-24D5-F194-1241-86034A792467', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
+('1879D383-1DBB-6C54-20B7-472538926264', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('1D4EF0ED-DB16-5F45-812A-BEBF174D712B', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
+('2', '/', 'test test ', 'meta description', 'meta keywords', 'content', 'website id', 'header', 'footer'),
 ('3042ECA8-695B-0B3A-E0E6-6DC6CDAA65F6', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
+('3E643C7A-3115-A7A4-27FC-A5E099FDB5B5', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('40B021AB-13F2-A5D9-2A89-6F4E4E0D0223', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('451631CF-9C75-987F-E4DB-F89224676004', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('4D568122-94A6-AB32-CE56-4555216E52D4', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('533F1773-70A4-7976-3E41-2AE31E49FC92', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('5A17F5C4-1D81-6F5A-7ED4-F9000A5A3C3E', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
+('5D791D53-6A04-C045-8CC8-215FC59D5E57', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('68A365DF-D222-D9A5-9A68-81B89E25DDCB', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('69716466-470C-365F-F91F-B6C2A7E2FBC8', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('71F942C0-9333-8773-F7CA-A33D8652E75E', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
@@ -189,9 +313,12 @@ INSERT INTO `pages` (`id`, `path`, `browser_title`, `meta_description`, `meta_ke
 ('7412FADD-D0E3-0B42-E3CC-DD7AB54BE4BB', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('7CD654E9-B4D6-4527-29DB-02F918E094B2', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('7DDB27A6-1239-4ABE-B470-7CD9C5B6B25D', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
+('7E6FCE19-135C-BF12-25DC-521AD6D3C139', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('88B0DF0C-5AD0-9649-41D7-EAC658FD6C0F', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('8CB702DE-F696-63ED-CC97-E1D448B7C658', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
+('92FDA544-20AA-BA34-1BBA-964D9940BDA2', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('98B46BB4-B086-8CCA-0337-62AFC7596721', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
+('A0DD8E05-C500-6296-AD54-32C371DD93D9', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('A1255540-A834-0E3B-9FFB-EF46E4C1BBF2', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('A3FFC10C-CABC-EA27-E8F2-4637CE6DA06D', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('AC2E97AE-E0D3-A8CA-E37A-0E5C47B255E6', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
@@ -203,13 +330,18 @@ INSERT INTO `pages` (`id`, `path`, `browser_title`, `meta_description`, `meta_ke
 ('B7DD95D7-1678-6A92-F5AD-AD44E54834E9', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('CCA3CBE6-7707-F0E4-7BC8-3AB44C28B4BE', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('CD1ABCBE-0674-7638-4389-7747D730D543', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
+('CEE0B48F-5D1F-7FA8-7527-B1298AF81A91', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
+('D2D3A24B-C870-F55E-B9FA-C498B3B8D781', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
+('D89DCDE6-00AF-B0BC-2B57-F017E1208015', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('DA6008F2-9D2F-B814-70FA-7CE4120CD4AA', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('DC4B053D-1D7B-8825-A622-19F2608D658C', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('E5C32CB4-05FB-753D-025B-26A801A3B6DD', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('E934CAB1-8EF5-A3D5-6BE1-F348C336B19E', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
+('E9CE42C6-0430-227B-A5F9-F858F454CA75', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('EBC92B01-1D0F-237D-1802-D7A0E0BA89C4', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('F0085A36-2176-A4AE-F44B-398B9AB9981C', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('F198FA5F-0A97-8066-24C8-8524554679D8', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
+('F6473CBE-864E-DA6A-7356-62E4C3BA92A9', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', ''),
 ('F6584709-F4B6-0624-5B92-D449F38F467F', '/test/', '/test/', '/test/', '/test/', '/test/', '/test/', '', '');
 
 -- --------------------------------------------------------
