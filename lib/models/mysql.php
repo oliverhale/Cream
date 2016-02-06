@@ -48,14 +48,33 @@ class MysqlConnection  {
         }
         $sql="REPLACE INTO ".$this->name." SET ";
         $set_sql=array();
-        foreach($data AS $key=>$value){
-            $set_sql[]="`".$key."`='".$this->saveReformating($key,$value)."'";
+        $columns=$this->getTableStructure();
+        foreach($columns as $column){
+            $availableColumns[$column['Field']]=1;
+            if($column['Key']=='PRI'){ $primaryKey=$column['Field']; }
         }
-        if(!isset($data['id'])){
-           $set_sql[]="`id`='".createGUID()."'";
+        foreach($data AS $key=>$value){
+            if (isset($availableColumns[$key])){
+                $set_sql[]="`".$key."`='".$this->SaveReformating($key,$value)."'";
+            }
+        }
+        if(!isset($data[$primaryKey])){
+           $set_sql[]="`".$primaryKey."`='".createGUID()."'";
         }
         $sql.=implode(",",$set_sql);
+        echo $sql;
         $this->Query($sql);
+    }
+    public function SaveReformating($column,$value){
+        if (isset($this->saveReformating[$column])){
+            $function=$this->saveReformating[$column];
+            if (method_exists( get_class($this) , $function )){
+                $value= $this->function($value);
+            }else if(function_exists( $function )){
+                $value=$function($value);
+            }
+        }
+        return $value;
     }
     public function Find($returnType=null,$settings=null){
         $this->currentModel=substr(get_class($this),strlen('Table'));

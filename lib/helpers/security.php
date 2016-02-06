@@ -11,3 +11,9 @@ function get_password_hash_cost()
 	} while (($end - $start) < $timeTarget);
 	return $cost;
 }
+function get_password_hash($password){
+	$options = [
+	    'cost' => get_password_hash_cost(),
+	];
+	return password_hash($password, PASSWORD_BCRYPT, $options)."\n";
+}

@@ -16,3 +16,6 @@ function createGUID(){
 
         return $uuid;
 }
+function format_name($str){
+    return trim(ucwords($str));
+}
