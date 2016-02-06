@@ -47,11 +47,13 @@ class Router {
 						$obj->loadComponent($component);
 					} 
 				}
+				/*
 				if (property_exists($controller, 'models')){
 					foreach($obj->models as $model){
 						$obj->loadModel($model);
 					} 
 				}
+				*/
 				$this->routeToController=$controller;
 				call_user_func_array(array($obj, 'passRoutes'),array($this->routes));
 				call_user_func_array(array($obj, $method),$this->_setVariableValues($url,$route));

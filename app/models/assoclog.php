@@ -1,4 +1,4 @@
-<?php class AssocLog extends MysqlConnection {
+<?php class TableAssocLog extends MysqlConnection {
 	var $name='assoc_logs';
 	//var $hasOne=array('User');
 	function __construct(){

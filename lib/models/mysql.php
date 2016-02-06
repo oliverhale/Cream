@@ -20,7 +20,7 @@ class MysqlConnection  {
             exit;
         }
         $this->ConnnectionStat();
-        mysqli_set_charset( $GLOBALS['connection'],  MYSQL_CHAR_SET );
+            mysqli_set_charset( $GLOBALS['connection'],  MYSQL_CHAR_SET );
         }        
     }
     public function ConnnectionStat(){
@@ -49,7 +49,7 @@ class MysqlConnection  {
         $sql="REPLACE INTO ".$this->name." SET ";
         $set_sql=array();
         foreach($data AS $key=>$value){
-            $set_sql[]="`".$key."`='".$value."'";
+            $set_sql[]="`".$key."`='".$this->saveReformating($key,$value)."'";
         }
         if(!isset($data['id'])){
            $set_sql[]="`id`='".createGUID()."'";
@@ -58,7 +58,7 @@ class MysqlConnection  {
         $this->Query($sql);
     }
     public function Find($returnType=null,$settings=null){
-        $this->currentModel=get_class($this);
+        $this->currentModel=substr(get_class($this),strlen('Table'));
         $sql='SELECT ';
         $fields=array();
         if(isset($settings['fields'])){
@@ -78,7 +78,9 @@ class MysqlConnection  {
             if (count($this->contain)>0){
                 foreach($this->contain  as $foreignModel){
                     if (in_array($foreignModel , $this->hasOne)){
-                        $this->$foreignModel= new $foreignModel();
+                        require_once( dirname(dirname(dirname(__FILE__))).'/app/models/'.strtolower($foreignModel).'.php');
+                        $className='Table'.$foreignModel;
+                        $this->$foreignModel= new $className();
                         $allColumns=$this->getTableStructure($this->$foreignModel->name);
                         foreach($allColumns as $column){
                             $columns[]=$foreignModel.'.'.$column['Field'].' AS '.$foreignModel.'_'.$column['Field'];
@@ -92,7 +94,9 @@ class MysqlConnection  {
         if (count($this->contain)>0){
             foreach($this->contain  as $foreignModel){
                 if (in_array($foreignModel , $this->hasOne)){
-                    $this->$foreignModel= new $foreignModel();
+                    require_once( dirname(dirname(dirname(__FILE__))).'/app/models/'.strtolower($foreignModel).'.php');
+                    $className='Table'.$foreignModel;
+                    $this->$foreignModel= new $className();
                     $sql.=' LEFT JOIN '.$this->$foreignModel->name.' AS '.$foreignModel.' ON ('.$this->currentModel.'.'.$this->$foreignModel->foreignKeyName.'='.$foreignModel.'.id)'; 
                 }
             }
@@ -142,7 +146,7 @@ class MysqlConnection  {
         }
         $initial_data=$this->q($sql);
         $initial_data=$this->convertColumns($initial_data);
-        if (count($this->contain)>0 && !empty($initial_data) && property_exists($this->currentModel,'hasMany')){
+        if (count($this->contain)>0 && !empty($initial_data) && property_exists(get_class($this),'hasMany')){
             $i=0;
             foreach($initial_data as $row){
                 $primaryKeyIds[]=$row[$this->currentModel]['id'];
@@ -152,16 +156,19 @@ class MysqlConnection  {
             foreach($this->contain  as $foreignModel){
                 if (in_array($foreignModel , $this->hasMany)){
                     require_once( dirname(dirname(dirname(__FILE__))).'/app/models/'.strtolower($foreignModel).'.php');
-                    $this->$foreignModel= new $foreignModel();
+                    $className='Table'.$foreignModel;
+                    $this->$foreignModel= new $className();
                     $foreign_data=$this->$foreignModel->Find('',array('conditions'=>array($foreignModel.'.'.$this->foreignKeyName =>$primaryKeyIds)));
-                    foreach($foreign_data as $row){
-                        $rowPosition=$rowPos[$row[$foreignModel][$this->foreignKeyName]];
-                        if (!isset($initial_data[$rowPosition][$foreignModel])){
-                            $total=0;
-                        }else{ 
-                            $total=count($initial_data[$rowPosition][$foreignModel]);
+                    if($foreign_data){
+                        foreach($foreign_data as $row){
+                            $rowPosition=$rowPos[$row[$foreignModel][$this->foreignKeyName]];
+                            if (!isset($initial_data[$rowPosition][$foreignModel])){
+                                $total=0;
+                            }else{ 
+                                $total=count($initial_data[$rowPosition][$foreignModel]);
+                            }
+                            $initial_data[$rowPosition][$foreignModel][$total]=$row[$foreignModel];
                         }
-                        $initial_data[$rowPosition][$foreignModel][$total]=$row[$foreignModel];
                     }
                 }
             }    
@@ -198,8 +205,10 @@ class MysqlConnection  {
     public function __call($name,$arguements)
     {
         if(substr_count($name, 'FindBy')>0){
-        $column=str_replace('FindBy', '', $name);
-        return $this->Find('list',array('conditions'=>array(strtolower($column)=>column_string_convert($arguements[0]))));
+            $column=str_replace('FindBy', '', $name);
+            return $this->Find('list',array('conditions'=>array(strtolower($column)=>column_string_convert($arguements[0]))));
+        }else if(substr_count($name, 'get')>0){
+            return $this->Find('list',array('conditions'=>array(strtolower($column)=>column_string_convert($arguements[0]))));
         }
     }
 } 

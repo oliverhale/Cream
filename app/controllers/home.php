@@ -21,7 +21,7 @@ class Home extends App {
     	$testVar='Another';
       //__('test');
       //$this->db->Query("SELECT * FROM `page` ");
-     // $this->loadModel('page');
+      $this->loadModel('page');
       //$this->loadModel('website');
       $data['path']='/test/';
       $data['browser_title']='/test/';
@@ -32,7 +32,7 @@ class Home extends App {
 
      // $this->page->Save($data);
       $this->page->contain(array('Website','Comment'));
-      $this->page->FindById(2);
+     var_dump( $this->page->FindById(2));
       $this->html->title='Welcome to CreamPHP';
     	$this->assign(compact("t", "testVar","html"));
     }

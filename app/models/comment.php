@@ -1,4 +1,4 @@
-<?php class Comment extends MysqlConnection {
+<?php class TableComment extends MysqlConnection {
 	var $name='Comments';
 	var $hasOne=array('User');
 

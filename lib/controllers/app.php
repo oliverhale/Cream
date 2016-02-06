@@ -8,28 +8,31 @@ class App extends Router {
     var $data;
     var $html;
     var $routes;
+    var $m;
     function __construct(){ 
         require_once( dirname(dirname(dirname(__FILE__))).'/lib/helpers/translation.php');
         require_once( dirname(dirname(dirname(__FILE__))).'/lib/helpers/string.php');
         require_once( dirname(dirname(dirname(__FILE__))).'/lib/helpers/math.php');
-        require(dirname(dirname(dirname(__FILE__))).'/lib/models/mysql.php');
-        require(dirname(dirname(dirname(__FILE__))).'/lib/models/memcache.php');
+        require_once(  dirname(dirname(dirname(__FILE__))).'/lib/helpers/security.php');
+        require_once(dirname(dirname(dirname(__FILE__))).'/lib/models/mysql.php');
+        require_once(dirname(dirname(dirname(__FILE__))).'/lib/models/memcache.php');
         startEvent('Create Mysql Connection');
         $this->db = new MysqlConnection();
         endEvent('Create Mysql Connection');
         $this->mem = new MemcacheConnection();
         
         $this->html = new stdClass();
-        if (isset($_POST)){
-            $this->data= new stdClass();
+        if (count($_POST)>0){
             foreach($_POST as $key=>$val){
-                if (!empty($key) && !empty($val)){ $this->data->$key=$val; }
+                if (!empty($key) && !empty($val)){ $request[$key]=$val; }
             }
+            $this->data=$request;
         }
     }
     public function loadModel($model){  	
     	require_once( dirname(dirname(dirname(__FILE__))).'/app/models/'.strtolower($model).'.php');
-        $this->$model= new $model($this->db);
+        $className='Table'.$model;
+        $this->$model= new $className();
     }
     public function loadComponent($component){      
         require_once( dirname(dirname(dirname(__FILE__))).'/app/controllers/components/'.strtolower($component).'.php');

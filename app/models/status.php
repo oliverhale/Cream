@@ -1,5 +1,5 @@
-<?php class SecurityQuestions extends MysqlConnection {
-	var $name='security_questions';
+<?php class TableStatus extends MysqlConnection {
+	var $name='statuses';
 	//var $hasOne=array('User');
 	function __construct(){
 		
