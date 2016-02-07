@@ -6,6 +6,16 @@ class MysqlConnection  {
     var $currentModel;
     var $Link;
     var $stat;
+    var $modelCallBacks=array(
+                            'beforeFind',
+                            'AfterFind',
+                            'beforeValidate',
+                            'afterValidate',
+                            'beforeSave',
+                            'afterSave',
+                            'beforeDelete',
+                            'afterDelete',
+                            );
     function __construct(){
        $this->Connection();
     }
@@ -64,17 +74,6 @@ class MysqlConnection  {
         $sql.=implode(",",$set_sql);
         echo $sql;
         $this->Query($sql);
-    }
-    public function SaveReformating($column,$value){
-        if (isset($this->saveReformating[$column])){
-            $function=$this->saveReformating[$column];
-            if (method_exists( get_class($this) , $function )){
-                $value= $this->function($value);
-            }else if(function_exists( $function )){
-                $value=$function($value);
-            }
-        }
-        return $value;
     }
     public function Find($returnType=null,$settings=null){
         $this->currentModel=substr(get_class($this),strlen('Table'));
@@ -163,7 +162,13 @@ class MysqlConnection  {
             }
             $sql.=implode(',',$group);
         }
+        if ($sql=$this->modelCallBack('beforeFind',$sql)){
+            return $sql;
+        }else{
+            return false;
+        }
         $initial_data=$this->q($sql);
+        
         $initial_data=$this->convertColumns($initial_data);
         if (count($this->contain)>0 && !empty($initial_data) && property_exists(get_class($this),'hasMany')){
             $i=0;
@@ -191,6 +196,9 @@ class MysqlConnection  {
                     }
                 }
             }    
+        }
+        if (1){
+            
         }
         $data=$initial_data;
         return $data; 
@@ -220,6 +228,35 @@ class MysqlConnection  {
         }else{
             $this->contain=$contain;
         }
+    }
+    public function modelCallBack($methodName,$data_a){
+        if(in_array($methodName, $this->modelCallBacks)){
+           // modelCallBack('beforeFind'
+            if (method_exists( get_class($this) , $methodName )){
+                if($methodName=='beforeFind'){
+                    $sql= $this->function($data_a);
+                    return $value;
+                }
+            }else{
+                if($methodName=='beforeFind'){
+                    return $data_a;
+                }
+            }
+        }else{
+            echo 'Unknown Model '.$methodName.' Callback.';
+            return $false;
+        }
+    }
+    public function SaveReformating($column,$value){
+        if (isset($this->saveReformating[$column])){
+            $function=$this->saveReformating[$column];
+            if (method_exists( get_class($this) , $function )){
+                $value= $this->function($value);
+            }else if(function_exists( $function )){
+                $value=$function($value);
+            }
+        }
+        return $value;
     }
     public function __call($name,$arguements)
     {
