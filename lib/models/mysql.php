@@ -16,22 +16,24 @@ class MysqlConnection  {
                             'beforeDelete',
                             'afterDelete',
                             );
+    var $TablePrimaryKey;
     function __construct(){
        $this->Connection();
     }
 
-    public function Connection(){
-        if(!isset($GLOBALS['connection'])){
-        $GLOBALS['connection']=mysqli_connect(MYSQL_HOST, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB, MYSQL_PORT);
-		if (!$GLOBALS['connection']) {
-            echo "Error: Unable to connect to MySQL." . PHP_EOL;
-            echo "Debugging errno: " . mysqli_connect_errno() . PHP_EOL;
-            echo "Debugging error: " . mysqli_connect_error() . PHP_EOL;
-            exit;
-        }
-        $this->ConnnectionStat();
+    public function Connection($mysql_host=MYSQL_HOST,$mysql_user=MYSQL_USER,$mysql_password=MYSQL_PASSWORD, $mysql_db=MYSQL_DB, $mysql_port=MYSQL_PORT){
+        if(!isset($GLOBALS['connection']) && empty($GLOBALS['connection'])){
+            $GLOBALS['connection']=mysqli_connect($mysql_host, $mysql_user,$mysql_password, $mysql_db, $mysql_port);
+    		if (!$GLOBALS['connection']) {
+                echo "Error: Unable to connect to MySQL." . PHP_EOL;
+                echo "Debugging errno: " . mysqli_connect_errno() . PHP_EOL;
+                echo "Debugging error: " . mysqli_connect_error() . PHP_EOL;
+                return false;
+            }
+            $this->ConnnectionStat();
             mysqli_set_charset( $GLOBALS['connection'],  MYSQL_CHAR_SET );
-        }        
+        }   
+        return true;
     }
     public function ConnnectionStat(){
         $this->stat=mysqli_get_connection_stats($GLOBALS['connection']);
@@ -77,6 +79,12 @@ class MysqlConnection  {
     }
     public function Find($returnType=null,$settings=null){
         $this->currentModel=substr(get_class($this),strlen('Table'));
+        if (empty($this->tableStructure)){
+            $this->tableStructure=$this->getTableStructure(); 
+        }
+        foreach($this->tableStructure as $row){
+            if ($row['key']){  $table_primary_key_column; }
+        }
         $sql='SELECT ';
         $fields=array();
         if(isset($settings['fields'])){
@@ -85,9 +93,6 @@ class MysqlConnection  {
             }
             $sql.=implode(', ',$fields);
         }else{
-            if (empty($this->tableStructure)){
-                $this->tableStructure=$this->getTableStructure(); 
-            }
             if (is_array($this->tableStructure)){
                 foreach($this->tableStructure as $column){
                     $columns[]=$this->currentModel.'.'.$column['Field'].' AS '.$this->currentModel.'_'.$column['Field'];
@@ -197,7 +202,8 @@ class MysqlConnection  {
                 }
             }    
         }
-        if (1){
+        //afterFind(array $results, boolean $primary = false)
+        if ($sql=$this->modelCallBack('afterFind',$initial_data,$primary_used)){
             
         }
         $data=$initial_data;
@@ -220,7 +226,17 @@ class MysqlConnection  {
          $table=$this->name;   
         }
         $sql='SHOW COLUMNS FROM '.$table;
-        return $this->q($sql);
+        $this->tableStructure= $this->q($sql);
+    }
+    public function getTablePrimaryKey($table=null){
+        if (empty($this->tableStructure)){
+            $this->tableStructure=$this->getTableStructure($table);
+        }
+        foreach($columns as $column){
+            $availableColumns[$column['Field']]=1;
+            if($column['Key']=='PRI'){ $primaryKey=$column['Field']; }
+        }
+        
     }
     public function contain($contain){
         if(is_string($contain)){

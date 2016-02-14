@@ -19,3 +19,6 @@ function createGUID(){
 function format_name($str){
     return trim(ucwords($str));
 }
+function boolean_convert($boolean){
+    return $string = ($boolean) ? 'TRUE' : 'FALSE';
+}

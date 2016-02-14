@@ -1,3 +1,3 @@
 <?php 
-require_once("../app/conf/conf.php");
-echo 'Welcome to Cream Unit Testing';
+require_once(dirname(__FILE__).DIRECTORY_SEPARATOR."controllers".DIRECTORY_SEPARATOR."UnitTestClient.php");
+$done = new UnitTestingClient();
